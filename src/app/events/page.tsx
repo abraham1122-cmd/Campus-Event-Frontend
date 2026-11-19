@@ -1,24 +1,15 @@
 
-
-
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-import type { Event } from "@/types/event";
-import { seedEvents } from "@/data/events";
+import { createEvent } from "@/service/eventsService";
 
-import SearchBar from "@/components/events/searchBar";
-import EventFilter from "@/components/events/eventFilters";
-import EventCard from "@/components/events/eventCard";
-import Loading from "@/components/events/loading";
-import Pagination from "@/components/events/pagination";
+type CreateEventInput = Parameters<typeof createEvent>[0];
 
-type SortOption = "Soonest" | "Latest";
-
-const categories = [
-  "All",
+const categories: CreateEventInput["category"][] = [
   "Culture",
   "Talks",
   "Community",
@@ -27,155 +18,304 @@ const categories = [
   "Workshop",
 ];
 
-export default function EventsPage() {
-  const [events] = useState<Event[]>(seedEvents);
+export default function CreateEventPage() {
+  const router = useRouter();
 
-  const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("All");
-  const [sort, setSort] = useState<SortOption>("Soonest");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [loading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
 
-  const itemsPerPage = 4;
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    location: "",
+    date: "",
+    time: "",
+    category: "" as CreateEventInput["category"] | "",
+    isPublished: true,
+  });
 
-  // Search, filter and sort events.
-  const filteredEvents = useMemo(() => {
-    const result = events.filter((event) => {
-      const matchesCategory =
-        category === "All" || event.category === category;
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
+    const { name, value, type } = e.target;
 
-      const searchText =
-        `${event.title} ${event.category} ${event.location}`.toLowerCase();
+    setFormData((prev) => ({
+      ...prev,
+      [name]:
+        type === "checkbox"
+          ? (e.target as HTMLInputElement).checked
+          : value,
+    }));
+  };
 
-      const matchesSearch = searchText.includes(query.toLowerCase());
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
 
-      return (
-        matchesCategory &&
-        matchesSearch &&
-        event.isPublished
+    setError("");
+    setSuccess(false);
+
+    if (!formData.category) {
+      setError("Please select an event category.");
+      return;
+    }
+
+    if (!formData.date || !formData.time) {
+      setError("Please select an event date and time.");
+      return;
+    }
+
+    // Combine the selected date and time
+    const eventDate = new Date(
+      `${formData.date}T${formData.time}:00`
+    );
+
+    // Validate the date
+    if (Number.isNaN(eventDate.getTime())) {
+      setError("Please enter a valid event date and time.");
+      return;
+    }
+
+    // Ensure the event is in the future
+    if (eventDate.getTime() <= Date.now()) {
+      setError("Event date must be in the future.");
+      return;
+    }
+
+    // Convert JavaScript Date to ISO 8601 string
+    const isoEventDate = eventDate.toISOString();
+
+    const payload: CreateEventInput = {
+      title: formData.title.trim(),
+      description: formData.description.trim(),
+      location: formData.location.trim(),
+      category: formData.category,
+      eventDate: isoEventDate,
+      isPublished: formData.isPublished,
+    };
+
+    try {
+      setLoading(true);
+
+      // Debugging: inspect the exact data being sent
+      console.log(
+        "Payload being sent:",
+        JSON.stringify(payload, null, 2)
       );
-    });
 
-    return [...result].sort((a, b) => {
-      if (sort === "Latest") {
-        return b.eventDate - a.eventDate;
-      }
+      console.log("Event date:", payload.eventDate);
 
-      return a.eventDate - b.eventDate;
-    });
-  }, [events, query, category, sort]);
+      console.log(
+        "Is valid date:",
+        !Number.isNaN(Date.parse(payload.eventDate))
+      );
 
-  // Pagination.
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredEvents.length / itemsPerPage),
-  );
+      await createEvent(payload);
 
-  const paginatedEvents = filteredEvents.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage,
-  );
+      setSuccess(true);
 
-  // Reset pagination when search or filters change.
-  const handleSearch = (value: string) => {
-    setQuery(value);
-    setCurrentPage(1);
-  };
+      setTimeout(() => {
+        router.push("/events");
+        router.refresh();
+      }, 1000);
 
-  const handleCategory = (value: string) => {
-    setCategory(value);
-    setCurrentPage(1);
-  };
+    } catch (err) {
+      console.error("Create event error:", err);
 
-  const handleSort = (value: SortOption) => {
-    setSort(value);
-    setCurrentPage(1);
-  };
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to create event. Please try again."
+      );
 
-  const clearFilters = () => {
-    setQuery("");
-    setCategory("All");
-    setSort("Soonest");
-    setCurrentPage(1);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <section className="page events-page">
-      {/* Page heading */}
-      <div className="page-title">
-        <span className="eyebrow">DISCOVER CAMPUS</span>
+    <main className="page create-page">
 
-        <h1>Upcoming events</h1>
+      <div className="form-intro">
+        <span className="eyebrow">CREATE AN EVENT</span>
 
-        <p>Find something worth showing up for.</p>
-      </div>
+        <h1>
+          Bring people
+          <br />
+          <em>together.</em>
+        </h1>
 
-      {/* Search and filters */}
-      <div className="event-tools">
-        <SearchBar
-          searchQuery={query}
-          setSearchQuery={handleSearch}
-        />
+        <p>
+          Share the essentials and make your event
+          easy to discover across campus.
+        </p>
 
-        <EventFilter
-          category={category}
-          setCategory={handleCategory}
-          sortBy={sort}
-          setSortBy={handleSort}
-          categories={categories}
-        />
-      </div>
+        <div className="form-note">
+          <span>✓</span>
 
-      {/* Results information */}
-      <div className="results-label">
-        <span>
-          {filteredEvents.length}{" "}
-          {filteredEvents.length === 1 ? "event" : "events"}
-        </span>
-
-        <span>Campus events</span>
-      </div>
-
-      {/* Events */}
-      {loading ? (
-        <Loading />
-      ) : paginatedEvents.length > 0 ? (
-        <>
-          <div className="events-grid">
-            {paginatedEvents.map((event) => (
-              <Link
-                key={event.id}
-                href={`/events/${event.id}`}
-                className="block"
-              >
-                <EventCard event={event} />
-              </Link>
-            ))}
-          </div>
-
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-          />
-        </>
-      ) : (
-        <div className="empty">
-          <h2>No events found</h2>
-
-          <p>Try a different search or category.</p>
-
-          <button onClick={clearFilters}>
-            Clear filters
-          </button>
+          <span>
+            <b>Before you publish</b>
+            <small>
+              Double-check the date, time, location,
+              and event details.
+            </small>
+          </span>
         </div>
-      )}
-    </section>
+      </div>
+
+      <form
+        className="event-form"
+        onSubmit={handleSubmit}
+      >
+
+        <div className="form-heading">
+          <span>Event details</span>
+          <small>All fields are required</small>
+        </div>
+
+        <label className="full">
+          Event name
+
+          <input
+            type="text"
+            name="title"
+            value={formData.title}
+            onChange={handleChange}
+            placeholder="e.g. Spring Film Night"
+            required
+            minLength={3}
+          />
+        </label>
+
+        <label className="full">
+          Description
+
+          <textarea
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+            rows={4}
+            placeholder="Tell students what to expect..."
+            required
+            minLength={10}
+          />
+        </label>
+
+        <label>
+          Category
+
+          <select
+            name="category"
+            value={formData.category}
+            onChange={handleChange}
+            required
+          >
+            <option value="" disabled>
+              Select category
+            </option>
+
+            {categories.map((category) => (
+              <option
+                key={category}
+                value={category}
+              >
+                {category}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label>
+          Location
+
+          <input
+            type="text"
+            name="location"
+            value={formData.location}
+            onChange={handleChange}
+            placeholder="Building or space"
+            required
+          />
+        </label>
+
+        <label>
+          Event date
+
+          <input
+            type="date"
+            name="date"
+            value={formData.date}
+            onChange={handleChange}
+            required
+          />
+        </label>
+
+        <label>
+          Start time
+
+          <input
+            type="time"
+            name="time"
+            value={formData.time}
+            onChange={handleChange}
+            required
+          />
+        </label>
+
+        <label className="full">
+          <span>Publication status</span>
+
+          <select
+            name="isPublished"
+            value={String(formData.isPublished)}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                isPublished: e.target.value === "true",
+              }))
+            }
+          >
+            <option value="true">Publish immediately</option>
+            <option value="false">Save as draft</option>
+          </select>
+        </label>
+
+        {error && (
+          <p className="form-error full" role="alert">
+            {error}
+          </p>
+        )}
+
+        {success && (
+          <p className="form-success full" role="status">
+            Event created successfully!
+          </p>
+        )}
+
+        <div className="form-actions full">
+
+          <Link
+            href="/events"
+            className="button secondary"
+          >
+            Cancel
+          </Link>
+
+          <button
+            className="button primary"
+            type="submit"
+            disabled={loading}
+          >
+            {loading
+              ? "Creating..."
+              : "Create event →"}
+          </button>
+
+        </div>
+
+      </form>
+    </main>
   );
 }
-
-
-
-// export default function EventsPage() {
-//   return <div>Events page is working</div>;
-// }

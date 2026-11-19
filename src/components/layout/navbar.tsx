@@ -26,7 +26,7 @@ export default function Navbar() {
           onClick={closeMenu}
           className="text-2xl font-bold text-indigo-600"
         >
-          Gather<span className="text-gray-900">.</span>
+          C-Events<span className="text-brown-700"></span>
         </Link>
 
         {/* Desktop navigation */}
@@ -50,18 +50,18 @@ export default function Navbar() {
                 : "text-gray-600 hover:text-indigo-600"
             }
           >
-            Explore Events
+            explore-Events
           </Link>
 
           <Link
             href="/events/create"
             className="rounded-lg bg-indigo-600 px-5 py-2.5 font-medium text-white transition hover:bg-indigo-700"
           >
-            Create Event
+            create~Event
           </Link>
         </div>
 
-        {/* Mobile menu button */}
+      
         <button
           type="button"
           onClick={() => setMenuOpen((open) => !open)}
@@ -91,6 +91,7 @@ export default function Navbar() {
               isEvents && !isCreate
                 ? "font-semibold text-indigo-600"
                 : "text-gray-700"
+
             }
           >
             Explore Events

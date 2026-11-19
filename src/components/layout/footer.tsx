@@ -8,7 +8,7 @@ export default function Footer() {
         {/* Brand */}
         <div>
           <Link href="/" className="text-2xl font-bold text-white">
-            Gather<span className="text-indigo-400">.</span>
+            cEvents<span className="text-indigo-400"></span>
           </Link>
 
           <p className="mt-4 max-w-sm text-sm leading-6 text-gray-400">
@@ -48,7 +48,7 @@ export default function Footer() {
       </div>
 
       <div className="border-t border-gray-800 px-6 py-5 text-center text-sm text-gray-500">
-        © {new Date().getFullYear()} Gather. All rights reserved.
+        © {new Date().getFullYear()} cEvents. All rights reserved.
       </div>
     </footer>
   );

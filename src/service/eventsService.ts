@@ -1,5 +1,4 @@
 
-
 import type { Event, PaginatedEvents } from "@/types/event";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -12,6 +11,10 @@ export interface EventQueryParams {
   sortBy?: string;
 }
 
+// Type for creating a new event
+export type CreateEventInput = Omit<Event, "id">;
+
+// Handle API responses
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const message = await response.text();
@@ -21,7 +24,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-// GET: Fetch paginated events
+// Get all events with optional filters and pagination
 export async function getEvents(
   params: EventQueryParams = {}
 ): Promise<PaginatedEvents> {
@@ -34,9 +37,11 @@ export async function getEvents(
   if (params.page) query.set("page", String(params.page));
   if (params.limit) query.set("limit", String(params.limit));
   if (params.search) query.set("search", params.search);
+
   if (params.category && params.category !== "All") {
     query.set("category", params.category);
   }
+
   if (params.sortBy) query.set("sortBy", params.sortBy);
 
   const response = await fetch(
@@ -52,31 +57,43 @@ export async function getEvents(
   return handleResponse<PaginatedEvents>(response);
 }
 
-// GET: Fetch one event
+// Get a single event by ID
 export async function getEventById(id: number): Promise<Event> {
   if (!API_URL) {
     throw new Error("NEXT_PUBLIC_API_URL is not configured");
   }
 
-  const response = await fetch(`${API_URL}/events/${id}`);
+  const response = await fetch(`${API_URL}/events/${id}`, {
+    method: "GET",
+  });
 
   return handleResponse<Event>(response);
 }
 
-// POST: Create an event
+// Create a new event
 export async function createEvent(
-  event: Omit<Event, "id">
+  event: CreateEventInput
 ): Promise<Event> {
   if (!API_URL) {
     throw new Error("NEXT_PUBLIC_API_URL is not configured");
   }
+
+  // const payload: CreateEventInput = {
+  //   ...event,
+  //   // eventDate: String(event.eventDate),
+  //   eventDate: new Date(Number(event.eventDate)).toISOString(),
+  // };
+  const payload: CreateEventInput = {
+  ...event,
+  eventDate: new Date(event.eventDate).toISOString(),
+};
 
   const response = await fetch(`${API_URL}/events`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(event),
+    body: JSON.stringify(payload),
   });
 
   return handleResponse<Event>(response);

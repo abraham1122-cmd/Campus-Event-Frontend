@@ -7,7 +7,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-import { createEvent } from "@/service/eventService";
+import { createEvent } from "@/service/eventsService";
 
 
 type CreateEventInput = Parameters<typeof createEvent>[0];
@@ -35,7 +35,7 @@ export default function CreateEventPage() {
     date: "",
     time: "",
     category: "" as CreateEventInput["category"] | "",
-    isPublished: true,
+    isPublished: true || false
   });
 
   const handleChange = (
