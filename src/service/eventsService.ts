@@ -11,7 +11,7 @@ export interface EventQueryParams {
   sortBy?: string;
 }
 
-// Type for creating a new event
+
 export type CreateEventInput = Omit<Event, "id">;
 
 // Handle API responses
@@ -24,7 +24,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-// Get all events with optional filters and pagination
+
 export async function getEvents(
   params: EventQueryParams = {}
 ): Promise<PaginatedEvents> {
