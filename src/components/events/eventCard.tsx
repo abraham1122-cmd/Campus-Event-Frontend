@@ -2,6 +2,7 @@
 
 
 import type { Event } from "@/types/event";
+import Link from "next/link";
 
 interface EventCardProps {
   event: Event;
@@ -38,18 +39,18 @@ const categoryImages: Record<EventCategory, string> = {
 function getEventImage(category: string): string {
   return (
     categoryImages[category as EventCategory] ??
-    categoryImages.Community
+    categoryImages
   );
 }
 
-function formatDate(timestamp: number): string {
+function formatDate(timestamp: string): string {
   return new Date(timestamp).toLocaleDateString("en-US", {
     month: "short",
     day: "2-digit",
   });
 }
 
-function formatTime(timestamp: number): string {
+function formatTime(timestamp: string): string {
   return new Date(timestamp).toLocaleTimeString("en-US", {
     hour: "numeric",
     minute: "2-digit",
@@ -63,9 +64,15 @@ export default function EventCard({ event }: EventCardProps) {
     <article className="event-card">
       {/* Event image */}
       <div className="event-image">
+        {/* || getEventImage(event.category) */}
         <img
-          src={getEventImage(event.category)}
+          src={event.image || getEventImage(event.image)} 
           alt={event.title}
+          style={{
+    width: "100%",
+    height: "250px",
+    objectFit: "cover",
+          }}
         />
 
         <span>{event.category}</span>
@@ -106,9 +113,12 @@ export default function EventCard({ event }: EventCardProps) {
               {formatDate(event.eventDate)}
             </span>
 
-            <span className="text-indigo-600 font-medium">
-              View event <span aria-hidden="true">→</span>
-            </span>
+            <Link 
+            href={`/events/${event.id}`}
+            className="text-indigo-600 font-medium" 
+            >
+              View <span aria-hidden="true"></span>
+            </Link>
           </footer>
         </div>
       </div>

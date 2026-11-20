@@ -5,6 +5,7 @@ export interface Event {
 
     id: number,
     title: string,
+    image: string;
     description: string,
     location: string,
     eventDate: string,

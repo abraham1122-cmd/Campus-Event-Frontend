@@ -321,6 +321,7 @@ export default function CreateEventPage() {
 
   const [formData, setFormData] = useState({
     title: "",
+    image: "",
     description: "",
     location: "",
     date: "",
@@ -383,6 +384,7 @@ export default function CreateEventPage() {
 
     const payload: CreateEventInput = {
       title: formData.title.trim(),
+      image: formData.image,
       description: formData.description.trim(),
       location: formData.location.trim(),
       category: formData.category,

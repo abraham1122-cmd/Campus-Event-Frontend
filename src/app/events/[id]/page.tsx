@@ -1,10 +1,11 @@
 
 
 
+export const dynamic = "force-dynamic"
+
 import Link from "next/link";
 import { notFound } from "next/navigation";
-
-import { seedEvents } from "@/data/events";
+import { getEventById } from "@/service/eventsService";
 
 interface EventDetailsPageProps {
   params: Promise<{
@@ -12,7 +13,8 @@ interface EventDetailsPageProps {
   }>;
 }
 
-function formatDate(timestamp: number) {
+
+function formatDate(timestamp: string) {
   return new Date(timestamp).toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",
@@ -21,21 +23,18 @@ function formatDate(timestamp: number) {
   });
 }
 
-function formatTime(timestamp: number) {
+function formatTime(timestamp: string) {
   return new Date(timestamp).toLocaleTimeString("en-US", {
     hour: "numeric",
     minute: "2-digit",
   });
 }
-
 export default async function EventDetailsPage({
   params,
 }: EventDetailsPageProps) {
   const { id } = await params;
 
-  const event = seedEvents.find(
-    (item) => item.id === Number(id)
-  );
+  const event = await getEventById(Number(id));
 
   if (!event || !event.isPublished) {
     notFound();
@@ -51,6 +50,16 @@ export default async function EventDetailsPage({
       </Link>
 
       <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        {event.image && (
+          <div className="h-64 w-full overflow-hidden md:h-96">
+            <img
+              src={event.image}
+              alt={event.title}
+              className="h-full w-full object-cover"
+            />
+          </div>
+        )}
+
         <div className="bg-indigo-50 px-8 py-12">
           <span className="inline-block rounded-full bg-indigo-100 px-4 py-1.5 text-sm font-medium text-indigo-700">
             {event.category}
