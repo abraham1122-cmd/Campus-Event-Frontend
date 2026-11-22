@@ -7,6 +7,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getEventById } from "@/service/eventsService";
 
+
+
 interface EventDetailsPageProps {
   params: Promise<{
     id: string;
